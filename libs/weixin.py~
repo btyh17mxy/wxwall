@@ -124,6 +124,7 @@ class WeixinPublic(object):
         if s == None:
             raise WeixinNeedLoginError('need re-login')
         else:
+            #print s.group(1)
             return s.group(1)
         
     def get_new_msg_num_request(self):
