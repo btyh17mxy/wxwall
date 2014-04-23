@@ -1,0 +1,29 @@
+{% for msg_item in msg%}
+<li class="clearfix t-row" style="display:block;">
+    <div class="userimg left">
+        <i class="elem">
+        </i>
+        <span class="elem2">
+        </span>
+        <a href="javascript:void(0);" class="head">
+            <img class="msgAvatar" src={{ msg_item.icon }} width="90" height="90" alt="">
+        </a>
+    </div>
+    <div class="cont-box left">
+        <p class="c-word">
+            <a href="javascript:void(0);" class="user-name msgUserName">
+                {{ msg_item.nick_name }}:
+            </a>
+            <span class="cont displayContent" style="font-size:24.803918541230534px;">
+                {{ msg_item.content }}
+            </span>
+        </p>
+    </div>
+    <div class="btn-detail messageDetailBtn" style="display: block;">
+        <div class="btn-style">
+            <a href="javascript:void(0);" class="icon-arrow">
+            </a>
+        </div>
+    </div>
+</li>
+{% endfor %}
