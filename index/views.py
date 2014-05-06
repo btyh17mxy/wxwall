@@ -11,12 +11,14 @@ from django.shortcuts import render_to_response
 
 from models import WXWall, Msg, FakeUser 
 from libs.weixin import WeixinPublic, WeixinNeedLoginError
+from wxwall.settings import DEBUG
 
-
-site = 'http://wxwall.mubuys.com/'
-media_uri = '/www/wxwall/media/wxuserimg'
-#site = 'http://localhost:8000'
-#media_uri = 'media/wxuserimg'
+if DEBUG:
+    site = 'http://localhost:8000'
+    media_uri = 'media/wxuserimg'
+else:
+    site = 'http://wxwall.mubuys.com/'
+    media_uri = '/www/wxwall/media/wxuserimg'
 
 def index(request, wxwall_id):
     
@@ -64,24 +66,20 @@ def get_new_msg(request, wxwall_id):
                     'icon':fu.icon
                     }
             data['msg'].append(item)
-            #print msg_item['content']
             wxwall.last_msg_id = msg_item['id']
             wxwall.msg_count = wxwall.msg_count + 1
-#            m = Msg()
-#            m.wxwall = wxwall
-#            m.msg_id = msg_item['id']
-#            m.fake_id = fu
-#            m.msg_type = 1
-#            m.date_time = msg_item['date_time']
-#            m.content = msg_item['content']
-#            m.save()
-##        else:
-#            break
+            m = Msg()
+            m.wxwall = wxwall
+            m.msg_id = msg_item['id']
+            m.fake_id = fu
+            m.msg_type = 1
+            m.date_time = msg_item['date_time']
+            m.content = msg_item['content']
+            m.save()
 
     wxwall.save()
 
     return render_to_response('msg_item.html',data)
-    
 
 #@require_POST
 #@csrf_exempt
@@ -105,8 +103,7 @@ def get_user(weixin, wxwall, fakeid, nick_name):
         fu.fake_id = fakeid
         fu.nick_name = nick_name
         fu.icon = '%s/media/wxuserimg/%s.jpg'%(site,fakeid)
-        fu.wxwall_id = wxwall.user_id
-        #fu.save()
+        fu.save()
     return fu
 
 

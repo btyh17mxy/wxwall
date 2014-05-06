@@ -25,10 +25,12 @@ class Msg(models.Model):
 
 
 class FakeUser(models.Model):
-    wxwall = models.ForeignKey('WXWall')
-    fake_id = models.IntegerField()
+    fake_id = models.IntegerField(primary_key = True)
     icon = models.CharField(max_length = 120, blank = True)
     nick_name = models.CharField(max_length = 120)
+    pup_date = models.DateTimeField(auto_now = True)
+    male = models.BooleanField(default = True)
+    location = models.CharField(max_length = 140, default = 'unknown')
 
 class MsgCount(models.Model):
     wxwall = models.ForeignKey('WXWall')
