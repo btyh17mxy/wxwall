@@ -15,6 +15,8 @@ import json
 import hashlib
 from urllib import URLopener
 #########################################################
+import requests
+#########################################################
 import logging
 DEBUG_LEVEL = logging.DEBUG
 try:
@@ -66,14 +68,7 @@ class WeixinPublic(object):
         self.lastmsgid = 0 
         self.token = token 
         self.base_headers =  {
-                'Accept':'application/json, text/javascript, */*; q=0.01',
-                'Accept-Encoding':'gzip,deflate,sdch',
-                'Accept-Language':'zh-CN,zh;q=0.8',
-                'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8',
-                'DNT':'1',
-                'Host':'mp.weixin.qq.com',
-                'Origin':'https://mp.weixin.qq.com',
-                'Referer':'https://mp.weixin.qq.com/',
+                'referer':'https://mp.weixin.qq.com/cgi-bin/loginpage?t=wxm2-login&lang=zh_CN',
                 'x-requested-with':'XMLHttpRequest',
                 #'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like '
                 #    +'Gecko) Chrome/33.0.1750.152 Safari/537.36',
@@ -82,7 +77,7 @@ class WeixinPublic(object):
         if self.token == None or self.wx_cookies == None:
             self.token = ''
             self.wx_cookies = ''
-            self.login_request()
+            self.login()
 
     def get_user_icon_http(self, fakeid = 1155750780, uri = ''):
         http = Http()
@@ -145,30 +140,43 @@ class WeixinPublic(object):
         f.write(respond)
         f.close()
 
-    def get_msg_list(self):
-        http = Http()
+    '''get message list.
 
-        msg_list_url = "https://mp.weixin.qq.com/cgi-bin/message?t=message/list&token=%s&count=20&day=7"%self.token
-        msg_list_payload = {
+    raise:
+        WeixinNeedLoginError, when need re-login.
+
+    returns:
+        messages in dict.
+    '''
+    def get_msg_list(self):
+        logging.info('------get_msg_list------')
+        url = 'https://mp.weixin.qq.com/cgi-bin/message?t=message/list&token=%s&count=20&day=7'%self.token
+        payload = {
                 't':'message/list',
                 'token':self.token,
                 'count':20,
-                'day':7
+                'day':7,
                 }
-        msg_list_headers = self.base_headers
-        msg_list_headers['Connection'] = 'keep-alive'
-        msg_list_headers['Accept']='text/html, */*; q=0.01'
-        msg_list_headers['Cookie'] = self.wx_cookies
-        
-        r, c = http.request(msg_list_url, 'GET', body = urlencode(msg_list_payload), headers = msg_list_headers)
-        c = "".join(c.split())
+        headers = {
+                'x-requested-with' : 'XMLHttpRequest',
+                'referer' : 'https://mp.weixin.qq.com/cgi-bin/loginpage?t=wxm2-login&lang=zh_CN',
+                'cookie' : self.wx_cookies,
+                }
+
+        r = requests.get(url, data = payload, headers = headers)
+
+        c = "".join(r.text.split())
         s =  re.search(r'list:\((.*)\).msg_item', c)
         if s == None:
+            logging.error('need re-login')
             raise WeixinNeedLoginError('need re-login')
         else:
-            return s.group(1)
-        
-    def get_new_msg_num_request(self):
+            msg_list =  s.group(1)
+        logging.debug('msg_list:\t%s'%msg_list)
+        return msg_list
+        logging.info('------end get_msg_list------')
+
+    def get_new_msg_num_urllib2(self):
         new_msg_url = "https://mp.weixin.qq.com/cgi-bin/getnewmsgnum"
         new_msg_payload = {
                 'token':self.token,
@@ -199,77 +207,36 @@ class WeixinPublic(object):
     Raise:
         WeixinLoginError, when can not get token from respond.
     '''
-    def login_request(self):
-        cookies = cookielib.LWPCookieJar()
-        cookie_support= urllib2.HTTPCookieProcessor(cookies)
-        
-        opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
-        urllib2.install_opener(opener)
-        
-        req = urllib2.Request(url = 'https://mp.weixin.qq.com/cgi-bin/login?lang=zh_CN',
-                              data = ('username=' + self.account + 
-                              '&pwd=' + self.pwd + 
-                              '&imgcode='
-                              '&f=json'))
-        
-        req.add_header("x-requested-with", "XMLHttpRequest")
-        req.add_header("referer", "https://mp.weixin.qq.com/cgi-bin/loginpage?t=wxm2-login&lang=zh_CN")
-        respond = opener.open(req).read()
-        logging.debug(respond)
-
-        s = re.search(r'token=(\d+)', respond)
-        
-        if not s:
-            logging.error('Login Error')
-            raise WeixinLoginError("Login error.")
-        
-        self.token = s.group(1)
-        
-        for cookie in cookies:
-            self.wx_cookies += cookie.name + '=' + cookie.value + ';'
-        logging.debug('wx_cookies:\t%s'%self.wx_cookies)
-        logging.debug('token:\t%s'%self.token)
-
-    '''登陆公众平台
-    '''
-    def login_http(self):
-        http = Http()
-
-        login_url = 'https://mp.weixin.qq.com/cgi-bin/login?lang=zh_CN'
-        login_payload = {
-                'username':self.account,
-                'pwd':self.pwd,
-                'imgcode':'',
-                'f':'json',
+    def login(self):
+        url = 'https://mp.weixin.qq.com/cgi-bin/login?lang=zh_CN'
+        payload = {
+                'username' : self.account,
+                'imgcode' : '',
+                'f' : 'json',
+                'pwd' : self.pwd,
                 }
-        login_headers = self.base_headers
-        login_headers['Referer'] = 'https://mp.weixin.qq.com/'
+        headers = {
+                'x-requested-with' : 'XMLHttpRequest',
+                'referer' : 'https://mp.weixin.qq.com/cgi-bin/loginpage?t=wxm2-login&lang=zh_CN',
+                }
 
-        r, c = http.request(login_url, 'POST', urlencode(login_payload),  headers = login_headers)
+        r = requests.post(url, data = payload, headers = headers)
+        
+        logging.info('------login------')
+        logging.debug("respond:\t%s"%r.text)
 
-        #获取Token
-        s = re.search(r'token=(\d+)', c)
+        s = re.search(r'token=(\d+)', r.text)
         if not s:
+            logging.error('Login Error!!!')
             raise Exception("Login error.")
         self.token = int(s.group(1))
+        logging.debug('token:\t%d'%self.token)
         
-        #获取Cookies
-        self.wx_cookies = self.wx_cookies + r['set-cookie']
-
-    def home(self):
-        http = Http()
-
-        home_url = 'https://mp.weixin.qq.com/cgi-bin/home'
-        home_payload = {
-                't':'home/index',
-                'lang':'zh_CN',
-                'token':self.token,
-                }
-        home_headers = self.base_headers
-        home_headers['Cookie'] = self.wx_cookies
-        home_headers['Referer'] = 'https://mp.weixin.qq.com/'
-
-        r, c = http.request(home_url, 'GET', urlencode(home_payload), headers = home_headers)
+        self.wx_cookies = ''
+        for cookie in r.cookies:
+            self.wx_cookies += cookie.name + '=' + cookie.value + ';'
+        logging.debug('cookies:\t%s'%self.wx_cookies)
+        logging.info('------end login------')
 
     def get_new_msg_num(self):
         http = Http()
@@ -294,5 +261,4 @@ class WeixinPublic(object):
         
 if __name__ == '__main__':
     weixin = WeixinPublic("btyh17mxy@gmail.com","mushcode")
-    #weixin.get_new_msg_num()
-    weixin.get_user_icon_http()
+    weixin.get_msg_list()
