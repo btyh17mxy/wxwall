@@ -162,8 +162,50 @@ class WeixinPublic(object):
         f.close()
         logging.info('------end get_user_icon------')
 
+    '''get user info.
+
+    Args:
+        fakeid
+
+    Raise:
+        WeixinPublicError, when can not get user info
+
+    Returns:
+        userinfo in dict.
+    '''
+    def get_user_info(self, fakeid = 1155750780):
+        logging.info('------get_user_info------')
+        url = 'https://mp.weixin.qq.com/cgi-bin/getcontactinfo'
+        payload = {
+                'token':self.token,
+                'lang':'zh_CN',
+                'random':random.random(),
+                'f':'json',
+                'ajax':'1',
+                't':'ajax-getcontactinfo',
+                'fakeid':fakeid,
+                }
+        headers = {
+                'cookie':self.wx_cookies,
+                'Referer':'https://mp.weixin.qq.com/cgi-bin/contactmanage?t=user/index&token=%d&lang=zh_CN'%self.token,
+                'X-Requested-With':'XMLHttpRequest',
+                }
+
+        r = requests.post(url, data = payload, headers = headers)
+        logging.info(r.text)
+        r = json.loads(r.text)
+        if not r['base_resp']['err_msg'] == 'ok':
+            logging.error('get_user_info error !!!\t%s'%r['base_resp']['err_msg'])
+            raise WeixinPublicError(r['base_resp']['err_msg'] )
+
+        userinfo = r['contact_info']
+        logging.debug(userinfo)
+        logging.info('------end get_user_info------')
+        return userinfo
+
 
 if __name__ == '__main__':
-    weixin = WeixinPublic("account","password")
-    weixin.get_msg_list()
-    weixin.get_user_icon()
+    weixin = WeixinPublic("btyh17mxy@gmail.com","mushcode")
+    #weixin.get_msg_list()
+    #weixin.get_user_icon()
+    weixin.get_user_info(508305040)
