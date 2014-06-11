@@ -20,6 +20,7 @@ except Exception, e:
     root.addHandler(logging.StreamHandler())
 
 
+__author__ = 'Mush (btyh17mxy@gmail.com)'
 
 '''base exception class.
 '''
@@ -342,7 +343,7 @@ if __name__ == '__main__':
     print weixin.get_msg_list(lastmsgid = 200229775)
     #weixin.get_user_icon()
     #weixin.get_user_info(508305040)
-    #weixin.msg_push("推送消息测试")
+    weixin.msg_push("推送消息测试")
     #weixin.msg_send("测试")
     #for msg in weixin.get_msg():
     #    print msg

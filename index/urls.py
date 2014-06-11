@@ -2,7 +2,8 @@ from django.conf.urls import patterns, include, url
 
 
 urlpatterns = patterns('index.views',
-     url(r'^([a-zA-Z]*)/$', 'index', name='index'),
+     url(r'^', 'index', name='index'),
+     url(r'^([a-zA-Z]*)/$', 'home', name='home'),
      url(r'^([a-zA-Z]*[^/]\/get_new_msg)', 'get_new_msg', name='msg'),
      url(r'^([a-zA-Z]*\/get_msg_count)', 'get_msg_count', name='msg_count'),
     # url(r'^wxwall/', include('wxwall.foo.urls')),

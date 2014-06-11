@@ -4,7 +4,7 @@ __pycache__/
 *~
 *.pyc
 *.swp
-
+.svn/
 # C extensions
 *.so
 

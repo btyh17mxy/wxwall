@@ -20,7 +20,7 @@ else:
     site = 'http://wxwall.mubuys.com/'
     media_uri = '/www/wxwall/media/wxuserimg'
 
-def index(request, wxwall_id):
+def home(request, wxwall_id):
     
     weixin, wxwall = get_wx_by_id(wxwall_id)
     if weixin == None:
@@ -28,6 +28,9 @@ def index(request, wxwall_id):
 
 
     return render_to_response('index.html',{})
+
+def index(request):
+    return HttpResponse('this is index')
 
 #@require_POST
 #@csrf_exempt
